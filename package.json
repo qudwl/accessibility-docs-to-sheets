@@ -1,0 +1,16 @@
+{
+  "name": "accessibility-docs-to-sheets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": "true",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "parse-google-docs-json": "^3.0.0"
+  }
+}
