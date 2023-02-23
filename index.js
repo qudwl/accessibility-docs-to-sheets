@@ -3,9 +3,14 @@ const path = require("path");
 const process = require("process");
 const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
+const { convertGoogleDocumentToJson } = require("./parser");
+const { createSheet } = require("./sheets");
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ["https://www.googleapis.com/auth/documents.readonly"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/documents.readonly",
+  "https://www.googleapis.com/auth/spreadsheets",
+];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
@@ -65,17 +70,23 @@ async function authorize() {
   return client;
 }
 
-/**
- * Prints the title of a sample doc:
- * https://docs.google.com/document/d/195j9eDD3ccgjQRttHhJPymLJUCOUjs-jmwTrekvdjFE/edit
- * @param {google.auth.OAuth2} auth The authenticated Google OAuth 2.0 client.
- */
-async function printDocTitle(auth) {
+async function getDataFromDoc(auth) {
   const docs = google.docs({ version: "v1", auth });
   const res = await docs.documents.get({
-    documentId: "195j9eDD3ccgjQRttHhJPymLJUCOUjs-jmwTrekvdjFE",
+    documentId: "142a2yhRqaEzMS2mcNBeiMH9FPQ_eGjedR59ilV1Apa0",
   });
-  console.log(`The title of the document is: ${res.data.title}`);
+
+  return {
+    body: convertGoogleDocumentToJson(res.data),
+    title: res.data.title,
+    auth: auth,
+  };
 }
 
-authorize().then(printDocTitle).catch(console.error);
+authorize().then((res) => {
+  getDataFromDoc(res).then((res) => {
+    console.log(res);
+    const sheet = createSheet(res.title);
+    console.log(sheet.data);
+  })
+})
