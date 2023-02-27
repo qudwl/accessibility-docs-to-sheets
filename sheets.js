@@ -3,6 +3,7 @@ const path = require('path');
 const process = require('process');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
+const { sheets } = require('googleapis/build/src/apis/sheets');
 
 // If modifying these scopes, delete token.json.
 const SCOPES = [
@@ -82,9 +83,11 @@ async function create(auth, title) {
     };
     const spreadsheet = await sheets.spreadsheets.create({
         resource,
-        fields: 'spreadsheetId',
+        fields: ['spreadsheetId', 'sheetId'],
     });
     console.log(`Spreadsheet ID: ${spreadsheet.data.spreadsheetId}`);
+    console.log(`Spreedsheet Data:`);
+    console.log(spreadsheet.data);
 
     const request = {
         spreadsheetId: spreadsheet.data.spreadsheetId,
@@ -113,16 +116,39 @@ async function create(auth, title) {
                 },
                 {
                     'deleteSheet': {
-                        'title': 'Sheet1'
+                        'sheetId': 0
                     }
                 }
             ]
         }
     };
 
-    sheets.spreadsheets.batchUpdate(
+    await sheets.spreadsheets.batchUpdate(
         request
     );
+    const arr = await getSheetIds(spreadsheet.data.spreadsheetId, sheets);
+
+    console.log(arr);
+    return sheets;
+}
+
+const getSheetIds = async (spreadsheetId, sheets) => {
+    sheets.spreadsheets.get({
+        spreadsheetId,
+        fields: 'sheets.properties'
+    }, (err, res) => {
+        if (err) {
+            console.error("The API returned an error: ", err);
+            return null;
+        } else {
+            const arr = [];
+            for (let i in res.data.sheets) {
+                arr.push([res.data.sheets[i].title, res.data.sheets[i].sheetId]);
+            }
+
+            return arr;
+        }
+    });
 }
 
 const createSheet = async (title) => {

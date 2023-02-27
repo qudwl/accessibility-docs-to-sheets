@@ -85,8 +85,17 @@ async function getDataFromDoc(auth) {
 
 authorize().then((res) => {
   getDataFromDoc(res).then((res) => {
-    console.log(res);
-    const sheet = createSheet(res.title);
-    console.log(sheet.data);
+    // const sheet = createSheet(res.title);
+
+    const data = {};
+    for(let i = 0; i < res.body.content.length; i++) {
+      const keys = Object.keys(res.body.content[i]);
+
+      for (let j = 0; j < keys.length; j++) {
+        if (res.body.content[i][keys[j]].find("Executive Summary") != -1) {
+          
+        }
+      }
+    }
   })
 })
