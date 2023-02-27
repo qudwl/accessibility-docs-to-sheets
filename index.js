@@ -5,6 +5,7 @@ const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
 const { convertGoogleDocumentToJson } = require("./parser");
 const { createSheet } = require("./sheets");
+const attrReducer = require("./data_reducer");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = [
@@ -73,7 +74,7 @@ async function authorize() {
 async function getDataFromDoc(auth) {
   const docs = google.docs({ version: "v1", auth });
   const res = await docs.documents.get({
-    documentId: "142a2yhRqaEzMS2mcNBeiMH9FPQ_eGjedR59ilV1Apa0",
+    documentId: "10_WkHCQgQIWvfoLEKsKPEV2AGt3bLI6o7C22xXuDAdI",
   });
 
   return {
@@ -88,14 +89,25 @@ authorize().then((res) => {
     // const sheet = createSheet(res.title);
 
     const data = {};
-    for(let i = 0; i < res.body.content.length; i++) {
-      const keys = Object.keys(res.body.content[i]);
+    const body = res.body.content;
 
-      for (let j = 0; j < keys.length; j++) {
-        if (res.body.content[i][keys[j]].find("Executive Summary") != -1) {
-          
-        }
+    let startIndex = 0;
+    let curReducerIndex = 0;
+
+    // Getting URL
+    for (let i = startIndex; i < body.length; i++) {
+      const keyCur = Object.keys(body[i])[0];
+      const nextKey = Object.keys(body[i + 1])[0];
+      const result = attrReducer[curReducerIndex][1](body[i][keyCur], body[i + 1][nextKey]);
+      if (result[0]) {
+        data[attrReducer[curReducerIndex][0]] = result[1];
+        curReducerIndex++;
+      }
+
+      if (curReducerIndex >= attrReducer.length) {
+        break;
       }
     }
-  })
+    console.log(data);
+  });
 })

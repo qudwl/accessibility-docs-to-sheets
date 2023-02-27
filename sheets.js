@@ -126,10 +126,7 @@ async function create(auth, title) {
     await sheets.spreadsheets.batchUpdate(
         request
     );
-    const arr = await getSheetIds(spreadsheet.data.spreadsheetId, sheets);
-
-    console.log(arr);
-    return sheets;
+    return [spreadsheet.data.spreadsheetId, sheets];
 }
 
 const getSheetIds = async (spreadsheetId, sheets) => {
@@ -153,8 +150,10 @@ const getSheetIds = async (spreadsheetId, sheets) => {
 
 const createSheet = async (title) => {
     const auth = await authorize().catch(console.error);
-    const sheet = create(auth, title);
-    return sheet;
+    const sheet = await create(auth, title);
+    const arr = await getSheetIds(sheet[0], sheet[1]);
+
+    console.log(arr);
 };
 
 module.exports = { createSheet };
