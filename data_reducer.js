@@ -49,7 +49,14 @@ const attrReducer = [
 ];
 
 const dataReducer = (page, title, list) => {
+    const result = {page};
+    console.log(list);
+    result.title = title.substring(title.indexOf(":") + 1);
+    result.desc = list[0].substring(list[0].lastIndexOf("*") + 2);
+    result.rec = list[1].substring(list[1].lastIndexOf("*") + 2);
+    result.succ = list[2].substring(list[2].lastIndexOf("*") + 2);
 
+    return result;
 }
 
-module.exports = attrReducer;
+module.exports = {attrReducer, dataReducer};
