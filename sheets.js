@@ -148,12 +148,68 @@ const getSheetIds = async (spreadsheetId, sheets) => {
     });
 }
 
-const createSheet = async (title) => {
+const createSheet = async (title, data) => {
     const auth = await authorize().catch(console.error);
-    const sheet = await create(auth, title);
-    const arr = await getSheetIds(sheet[0], sheet[1]);
+    const sheets = await create(auth, title);
+    const arr = await getSheetIds(...sheets);
 
-    console.log(arr);
+    console.log(data);
+    
+    updateSheet(...sheets, data);
 };
+
+const updateSheet = async (spreadsheetId, sheets, data) => {
+    const valueInputOption = "USER_ENTERED";
+    let values = [];
+    let range;
+    values.push(['Executive Summary', data["Executive Summary"]]);
+    values.push(["Browsers used", data["Browsers"].join(", ")]);
+    values.push(["AT used", data["Tools"].join(", ")]);
+    values.push(["URL", data["URL"]]);
+    range = "Summary!A1:B5";
+    sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        resource: {values},
+        valueInputOption
+    });
+
+    // Adding Success Criteria.
+    const wcag = {values: data["wcag"]};
+    range = "Success Criteria!A1:A" + data["wcag"].length;
+    sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: range,
+        resource: wcag,
+        valueInputOption
+    });
+
+    // Setting Headers.
+    range = "Findings!A1:E1"
+    sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        resource: {values: [["Page", "Finding", "Description", "Recommendation", "Success Criteria"]]},
+        valueInputOption
+    })
+
+    range = "Findings!A2:E" + (data.findings.length + 1);
+    values = [];
+    for (let i = 0; i < data.findings.length; i++) {
+        const row = [];
+        row.push(data.findings[i].page);
+        row.push(data.findings[i].title);
+        row.push(data.findings[i].desc);
+        row.push(data.findings[i].rec);
+        row.push(data.findings[i].succ);
+        values.push(row);
+    }
+    sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        resource: {values},
+        valueInputOption
+    })
+}
 
 module.exports = { createSheet };

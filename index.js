@@ -5,7 +5,7 @@ const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
 const { convertGoogleDocumentToJson } = require("./parser");
 const { createSheet } = require("./sheets");
-const {attrReducer, dataReducer} = require("./data_reducer");
+const reducer = require("./data_reducer");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = [
@@ -84,62 +84,14 @@ async function getDataFromDoc(auth) {
   };
 }
 
+const formData = async (res) => {
+  const data = await reducer(res.body.content);
+
+  const sheet = createSheet(res.title, data);
+}
+
 authorize().then((res) => {
   getDataFromDoc(res).then((res) => {
-    // const sheet = createSheet(res.title);
-
-    const data = {};
-    const body = res.body.content;
-
-    let startIndex = 0;
-    let curReducerIndex = 0;
-
-    // Getting URL
-    for (let i = startIndex; i < body.length; i++) {
-      const keyCur = Object.keys(body[i])[0];
-      const nextKey = Object.keys(body[i + 1])[0];
-      const result = attrReducer[curReducerIndex][1](body[i][keyCur], body[i + 1][nextKey]);
-      if (result[0]) {
-        data[attrReducer[curReducerIndex][0]] = result[1];
-        curReducerIndex++;
-      }
-
-      if (curReducerIndex >= attrReducer.length) {
-        startIndex = i + 1;
-        while (Object.keys(body[startIndex]).indexOf("h1") == -1) {
-          startIndex++;
-        }
-        break;
-      }
-    }
-
-    let arr = null;
-    let page = null;
-    let title = null;
-    const findings = [];
-
-    while (startIndex < body.length) {
-      const key = Object.keys(body[startIndex])[0];
-      if (key == "h1") {
-        page = body[startIndex].h1;
-      } else if (key == "ol") {
-        arr = body[startIndex].ol;
-      } else if (key == "h3") {
-        title = body[startIndex].h3;
-      }
-
-      if (arr && page && title) {
-        const data = dataReducer(page, title, arr);
-        findings.push(data);
-        arr = null;
-        title = null;
-      }
-
-      startIndex++;
-    }
-    
-    data.findings = findings;
-
-    console.log(data);
+    formData(res);
   });
 })

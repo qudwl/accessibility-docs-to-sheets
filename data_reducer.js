@@ -50,7 +50,6 @@ const attrReducer = [
 
 const dataReducer = (page, title, list) => {
     const result = {page};
-    console.log(list);
     result.title = title.substring(title.indexOf(":") + 1);
     result.desc = list[0].substring(list[0].lastIndexOf("*") + 2);
     result.rec = list[1].substring(list[1].lastIndexOf("*") + 2);
@@ -59,4 +58,69 @@ const dataReducer = (page, title, list) => {
     return result;
 }
 
-module.exports = {attrReducer, dataReducer};
+const reducer = async (body) => {
+    const data = {};
+
+    let startIndex = 0;
+    let curReducerIndex = 0;
+
+    for (let i = startIndex; i < body.length; i++) {
+      const keyCur = Object.keys(body[i])[0];
+      const nextKey = Object.keys(body[i + 1])[0];
+      const result = attrReducer[curReducerIndex][1](body[i][keyCur], body[i + 1][nextKey]);
+      if (result[0]) {
+        data[attrReducer[curReducerIndex][0]] = result[1];
+        curReducerIndex++;
+      }
+
+      if (curReducerIndex >= attrReducer.length) {
+        startIndex = i + 1;
+        while (Object.keys(body[startIndex]).indexOf("h1") == -1) {
+          startIndex++;
+        }
+        break;
+      }
+    }
+
+    let arr = null;
+    let page = null;
+    let title = null;
+    const findings = [];
+    const wcag = [];
+    const searchNum = /[012346789]/;
+
+    while (startIndex < body.length) {
+      const key = Object.keys(body[startIndex])[0];
+      if (key == "h1") {
+        page = body[startIndex].h1;
+      } else if (key == "ol") {
+        arr = body[startIndex].ol;
+      } else if (key == "h3") {
+        title = body[startIndex].h3;
+      }
+
+      if (arr && page && title) {
+        const data = dataReducer(page, title, arr);
+        if (data.succ.search(searchNum) != -1) {
+            const critera = data.succ.substring(data.succ.search(searchNum), data.succ.search(searchNum) + 5);
+            data.succ = critera;
+            if (wcag.indexOf(critera) == -1) {
+                wcag.push(critera);
+            }
+        }
+        findings.push(data);
+        arr = null;
+        title = null;
+      }
+      startIndex++;
+    }
+
+    const wcagFormat = [];
+    while (wcag.length) wcagFormat.push(wcag.splice(0, 1));
+    
+    data.findings = findings;
+    data.wcag = wcagFormat;
+    return data;
+}
+
+module.exports = reducer;
